@@ -2,7 +2,10 @@
 
 namespace app\controllers;
 
+use Carbon\Carbon;
 use Yii;
+use yii\base\DynamicModel;
+use yii\components\googleAuthenticator;
 use yii\filters\AccessControl;
 use yii\web\Controller;
 use yii\web\Response;
@@ -20,10 +23,10 @@ class SiteController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::className(),
-                'only' => ['logout'],
+                'only' => ['logout','about'],
                 'rules' => [
                     [
-                        'actions' => ['logout'],
+                        'actions' => ['logout','about'],
                         'allow' => true,
                         'roles' => ['@'],
                     ],
@@ -37,6 +40,7 @@ class SiteController extends Controller
             ],
         ];
     }
+
 
     /**
      * {@inheritdoc}
@@ -61,6 +65,8 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
+        $auth = Yii::createObject(\app\models\GoogleAuthenticator::class)->getQRCodeGoogleUrl('Blog', $secret);
+        var_dump($auth);
         return $this->render('index');
     }
 
@@ -74,17 +80,62 @@ class SiteController extends Controller
         if (!Yii::$app->user->isGuest) {
             return $this->goHome();
         }
-
-        $model = new LoginForm();
-        if ($model->load(Yii::$app->request->post()) && $model->login()) {
-            return $this->goBack();
+        if(!is_null(Yii::$app->session['randomNum'])) {
+            return $this->redirect('varification');
         }
-
+        $model = new LoginForm();
+        if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+            $model::saveUserCredentials($model->username,$model->password);
+             if ($model->authMethod == $model::EMAIL_AUTH) {
+                    $model::sendEmailCode();
+                 return $this->redirect(['varification']);
+            }
+        }
         $model->password = '';
         return $this->render('login', [
             'model' => $model,
         ]);
     }
+
+    public function actionVarification()
+    {
+        LoginForm::checkSessionLife();
+        $session = Yii::$app->session;
+
+        if(is_null(Yii::$app->session['randomNum'])) {
+            return $this->redirect('login');
+        }
+
+        $model = new DynamicModel(['code']);
+        $model->addRule(['code'], 'integer',['message'=>'Latters are not allowed']);
+        $model->addRule(['code'], 'required')->validate();
+        $model->addRule('code', function ($attribute, $params) use ($model) {
+            if ($model->code != Yii::$app->session['randomNum']['number']) {
+                $model->addError($attribute, 'Incorrect digits provided');
+            }
+        });
+
+        if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+            $userCredentials = $session['credentials'];
+            $loginModel = new LoginForm();
+            $loginModel->username = $userCredentials['username'];
+            $loginModel->password = $userCredentials['password'];
+            if ($loginModel->login()) {
+                $session->remove('credentials');
+                $session->remove('randomNum');
+                return $this->redirect(['about']);
+            } else {
+                $model->addError('code', implode(' | ',$loginModel->errors));
+            }
+        }
+
+        return $this->render('varification',[
+            'model'=>$model
+        ]);
+    }
+
+
+
 
     /**
      * Logout action.

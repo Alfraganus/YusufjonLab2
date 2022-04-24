@@ -2,6 +2,7 @@
 
 namespace app\models;
 
+use Carbon\Carbon;
 use Yii;
 use yii\base\Model;
 
@@ -16,13 +17,18 @@ class LoginForm extends Model
     public $username;
     public $password;
     public $rememberMe = true;
+    public $authMethod;
+    CONST EMAIL_AUTH = 0;
+    CONST GOOGLE_AUTH = 1;
 
     private $_user = false;
-
+    private $session;
 
     /**
      * @return array the validation rules.
      */
+
+
     public function rules()
     {
         return [
@@ -34,6 +40,43 @@ class LoginForm extends Model
             ['password', 'validatePassword'],
         ];
     }
+    public static function saveUserCredentials($username,$password) : void
+    {
+        $session = Yii::$app->session;
+        $session['credentials'] = [
+            'username' => $username,
+            'password' => $password,
+            'lifetime' => 1800,
+        ];
+
+    }
+
+    public static function sendEmailCode()
+    {
+        $session = Yii::$app->session;
+
+         $session['randomNum'] = [
+            'number' => mt_rand(2000,9000),
+            'sessionEndTime' =>Carbon::now()->addMinutes(2),
+        ];
+
+        return  Yii::$app->mailer->compose()
+            ->setTo('d5b027cda8-c42927@inbox.mailtrap.io')
+            ->setFrom(['noreply@uzguitarist.com' =>'Yusufjon'])
+            ->setSubject('Access code for Yusufjon\'s project')
+            ->setTextBody('Welcome to Yusufjon Lab project, this is your 4 digit number to access the project: '.$session['randomNum']['number'])
+            ->send();
+    }
+
+    public static function checkSessionLife()
+    {
+        if(date(Yii::$app->session['randomNum']['sessionEndTime']) < Carbon::now()) {
+            Yii::$app->session->remove('randomNum');
+            Yii::$app->session->remove('credentials');
+            return Yii::$app->controller->redirect('login');
+        }
+    }
+
 
     /**
      * Validates the password.

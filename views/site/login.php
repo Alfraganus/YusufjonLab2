@@ -6,9 +6,10 @@
 
 use yii\bootstrap4\ActiveForm;
 use yii\bootstrap4\Html;
-
+use \app\models\LoginForm;
 $this->title = 'Login';
 $this->params['breadcrumbs'][] = $this->title;
+$model->authMethod = '0';
 ?>
 <div class="site-login">
     <h1><?= Html::encode($this->title) ?></h1>
@@ -26,7 +27,11 @@ $this->params['breadcrumbs'][] = $this->title;
         ],
     ]); ?>
 
-        <?= $form->field($model, 'username')->textInput(['autofocus' => true]) ?>
+    <?= $form->field($model, 'authMethod')->inline()->radioList([
+            LoginForm::EMAIL_AUTH=>'2 step email varification',
+        LoginForm::GOOGLE_AUTH =>'Google authentificator']
+    ) ?>
+    <?= $form->field($model, 'username')->textInput(['autofocus' => true]) ?>
 
         <?= $form->field($model, 'password')->passwordInput() ?>
 

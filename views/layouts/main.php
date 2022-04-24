@@ -11,6 +11,7 @@ use yii\bootstrap4\Nav;
 use yii\bootstrap4\NavBar;
 
 AppAsset::register($this);
+$isGuest =  Yii::$app->user->isGuest;
 ?>
 <?php $this->beginPage() ?>
 <!DOCTYPE html>
@@ -38,9 +39,8 @@ AppAsset::register($this);
         'options' => ['class' => 'navbar-nav'],
         'items' => [
             ['label' => 'Home', 'url' => ['/site/index']],
-            ['label' => 'About', 'url' => ['/site/about']],
-            ['label' => 'Contact', 'url' => ['/site/contact']],
-            Yii::$app->user->isGuest ? (
+            !$isGuest ?['label' => 'Welcome page', 'url' => ['/site/about']] : ['label'=>''],
+            $isGuest ? (
                 ['label' => 'Login', 'url' => ['/site/login']]
             ) : (
                 '<li>'
