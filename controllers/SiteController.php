@@ -2,7 +2,11 @@
 
 namespace app\controllers;
 
+use app\components\AuthHandler;
+use Carbon\Carbon;
 use Yii;
+use yii\base\DynamicModel;
+use yii\components\googleAuthenticator;
 use yii\filters\AccessControl;
 use yii\web\Controller;
 use yii\web\Response;
@@ -20,10 +24,10 @@ class SiteController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::className(),
-                'only' => ['logout'],
+                'only' => ['logout','about'],
                 'rules' => [
                     [
-                        'actions' => ['logout'],
+                        'actions' => ['logout','about'],
                         'allow' => true,
                         'roles' => ['@'],
                     ],
@@ -38,6 +42,7 @@ class SiteController extends Controller
         ];
     }
 
+
     /**
      * {@inheritdoc}
      */
@@ -47,12 +52,22 @@ class SiteController extends Controller
             'error' => [
                 'class' => 'yii\web\ErrorAction',
             ],
+            'auth' => [
+                'class' => 'yii\authclient\AuthAction',
+                'successCallback' => [$this, 'onAuthSuccess'],
+            ],
             'captcha' => [
                 'class' => 'yii\captcha\CaptchaAction',
                 'fixedVerifyCode' => YII_ENV_TEST ? 'testme' : null,
             ],
         ];
     }
+    public function onAuthSuccess($client)
+    {
+        (new AuthHandler($client))->handle();
+    }
+
+
 
     /**
      * Displays homepage.
@@ -74,17 +89,73 @@ class SiteController extends Controller
         if (!Yii::$app->user->isGuest) {
             return $this->goHome();
         }
-
-        $model = new LoginForm();
-        if ($model->load(Yii::$app->request->post()) && $model->login()) {
-            return $this->goBack();
+        if(!is_null(Yii::$app->session['randomNum'])) {
+            return $this->redirect('varification');
         }
+        $model = new LoginForm();
+        if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+            $model::saveUserCredentials($model->username,$model->password,$model->authMethod);
 
+             if ($model->authMethod == $model::EMAIL_AUTH) {
+                    $model::sendEmailCode();
+            }
+               if ($model->authMethod == $model::GOOGLE_AUTH) {
+                   return $this->redirect(['google-auth']);
+               }
+        }
         $model->password = '';
         return $this->render('login', [
             'model' => $model,
         ]);
     }
+
+    public function actionGoogleAuth()
+    {
+        $googleAuth = Yii::createObject(\Sonata\GoogleAuthenticator\GoogleAuthenticator::class);
+
+        $model = new DynamicModel(['code']);
+        $model->addRule(['code'], 'safe')->validate();
+
+        $model->addRule('code', function ($attribute, $params) use ($model,$googleAuth) {
+            if (!$googleAuth->checkCode(\app\models\GoogleAuthenticator::SECRET,$model->code)) {
+                $model->addError($attribute, 'Incorrect result! '.$googleAuth->getCode(\app\models\GoogleAuthenticator::SECRET));
+            }
+        });
+        if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+            (new LoginForm())->makeLogin('about');
+        }
+        return $this->render('google_varification',[
+            'model'=>$model,
+            'googleAuth'=>$googleAuth,
+        ]);
+    }
+
+    public function actionVarification()
+    {
+        LoginForm::checkSessionLife();
+        if(is_null(Yii::$app->session['randomNum'])) {
+            return $this->redirect('login');
+        }
+        $model = new DynamicModel(['code']);
+        $model->addRule(['code'], 'integer',['message'=>'Latters are not allowed']);
+        $model->addRule(['code'], 'required')->validate();
+        $model->addRule('code', function ($attribute, $params) use ($model) {
+            if ($model->code != Yii::$app->session['randomNum']['number']) {
+                $model->addError($attribute, 'Incorrect digits provided');
+            }
+        });
+
+        if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+            (new LoginForm())->makeLogin('about');
+        }
+
+        return $this->render('varification',[
+            'model'=>$model
+        ]);
+    }
+
+
+
 
     /**
      * Logout action.

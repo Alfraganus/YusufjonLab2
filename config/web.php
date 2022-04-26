@@ -12,6 +12,16 @@ $config = [
         '@npm'   => '@vendor/npm-asset',
     ],
     'components' => [
+        'authClientCollection' => [
+            'class' => 'yii\authclient\Collection',
+            'clients' => [ //AIzaSyAS150gNo1JVukrj4P9EGiBfE4kWcMjjow
+                'google' => [
+                    'class' => 'yii\authclient\clients\Google',
+                    'clientId' => '1035749911284-4gcv62fapudctl9cci8r0v4l78proj95.apps.googleusercontent.com',
+                    'clientSecret' => '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',
+                ],
+            ],
+        ],
         'request' => [
             // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
             'cookieValidationKey' => 'dqwd213qw4',
@@ -31,7 +41,15 @@ $config = [
             // send all mails to a file by default. You have to set
             // 'useFileTransport' to false and configure transport
             // for the mailer to send real emails.
-            'useFileTransport' => true,
+            'useFileTransport' => false,
+            'transport' => [
+                'class' => 'Swift_SmtpTransport',
+                'host' => 'smtp.mailtrap.io',
+                'username' => '07f87c0c87f319',
+                'password' => 'cfc66d168206f0',
+                'port' => 2525,
+                'encryption' => 'tls',
+            ],
         ],
         'log' => [
             'traceLevel' => YII_DEBUG ? 3 : 0,
