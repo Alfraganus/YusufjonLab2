@@ -12,6 +12,16 @@ $config = [
         '@npm'   => '@vendor/npm-asset',
     ],
     'components' => [
+        'authClientCollection' => [
+            'class' => 'yii\authclient\Collection',
+            'clients' => [ //AIzaSyAS150gNo1JVukrj4P9EGiBfE4kWcMjjow
+                'google' => [
+                    'class' => 'yii\authclient\clients\Google',
+                    'clientId' => '1035749911284-4gcv62fapudctl9cci8r0v4l78proj95.apps.googleusercontent.com',
+                    'clientSecret' => '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',
+                ],
+            ],
+        ],
         'request' => [
             // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
             'cookieValidationKey' => 'dqwd213qw4',
@@ -39,13 +49,6 @@ $config = [
                 'password' => 'cfc66d168206f0',
                 'port' => 2525,
                 'encryption' => 'tls',
-                'streamOptions' => [
-                    'ssl' => [
-                        'allow_self_signed' => true,
-                        'verify_peer' => false,
-                        'verify_peer_name' => false,
-                    ],
-                ]
             ],
         ],
         'log' => [

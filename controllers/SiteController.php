@@ -2,6 +2,7 @@
 
 namespace app\controllers;
 
+use app\components\AuthHandler;
 use Carbon\Carbon;
 use Yii;
 use yii\base\DynamicModel;
@@ -51,12 +52,22 @@ class SiteController extends Controller
             'error' => [
                 'class' => 'yii\web\ErrorAction',
             ],
+            'auth' => [
+                'class' => 'yii\authclient\AuthAction',
+                'successCallback' => [$this, 'onAuthSuccess'],
+            ],
             'captcha' => [
                 'class' => 'yii\captcha\CaptchaAction',
                 'fixedVerifyCode' => YII_ENV_TEST ? 'testme' : null,
             ],
         ];
     }
+    public function onAuthSuccess($client)
+    {
+        (new AuthHandler($client))->handle();
+    }
+
+
 
     /**
      * Displays homepage.
@@ -65,8 +76,6 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
-        $auth = Yii::createObject(\app\models\GoogleAuthenticator::class)->getQRCodeGoogleUrl('Blog', $secret);
-        var_dump($auth);
         return $this->render('index');
     }
 
@@ -85,11 +94,14 @@ class SiteController extends Controller
         }
         $model = new LoginForm();
         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
-            $model::saveUserCredentials($model->username,$model->password);
+            $model::saveUserCredentials($model->username,$model->password,$model->authMethod);
+
              if ($model->authMethod == $model::EMAIL_AUTH) {
                     $model::sendEmailCode();
-                 return $this->redirect(['varification']);
             }
+               if ($model->authMethod == $model::GOOGLE_AUTH) {
+                   return $this->redirect(['google-auth']);
+               }
         }
         $model->password = '';
         return $this->render('login', [
@@ -97,15 +109,33 @@ class SiteController extends Controller
         ]);
     }
 
+    public function actionGoogleAuth()
+    {
+        $googleAuth = Yii::createObject(\Sonata\GoogleAuthenticator\GoogleAuthenticator::class);
+
+        $model = new DynamicModel(['code']);
+        $model->addRule(['code'], 'safe')->validate();
+
+        $model->addRule('code', function ($attribute, $params) use ($model,$googleAuth) {
+            if (!$googleAuth->checkCode(\app\models\GoogleAuthenticator::SECRET,$model->code)) {
+                $model->addError($attribute, 'Incorrect result! '.$googleAuth->getCode(\app\models\GoogleAuthenticator::SECRET));
+            }
+        });
+        if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+            (new LoginForm())->makeLogin('about');
+        }
+        return $this->render('google_varification',[
+            'model'=>$model,
+            'googleAuth'=>$googleAuth,
+        ]);
+    }
+
     public function actionVarification()
     {
         LoginForm::checkSessionLife();
-        $session = Yii::$app->session;
-
         if(is_null(Yii::$app->session['randomNum'])) {
             return $this->redirect('login');
         }
-
         $model = new DynamicModel(['code']);
         $model->addRule(['code'], 'integer',['message'=>'Latters are not allowed']);
         $model->addRule(['code'], 'required')->validate();
@@ -116,17 +146,7 @@ class SiteController extends Controller
         });
 
         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
-            $userCredentials = $session['credentials'];
-            $loginModel = new LoginForm();
-            $loginModel->username = $userCredentials['username'];
-            $loginModel->password = $userCredentials['password'];
-            if ($loginModel->login()) {
-                $session->remove('credentials');
-                $session->remove('randomNum');
-                return $this->redirect(['about']);
-            } else {
-                $model->addError('code', implode(' | ',$loginModel->errors));
-            }
+            (new LoginForm())->makeLogin('about');
         }
 
         return $this->render('varification',[
