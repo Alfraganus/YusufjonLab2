@@ -74,7 +74,7 @@ class LoginForm extends Model
         $session = Yii::$app->session;
         $session['randomNum'] = [
             'number' => mt_rand(2000, 9000),
-            'sessionEndTime' => Carbon::now()->addMinutes(2),
+            'sessionEndTime' => Carbon::now()->addMinutes(3),
         ];
 
         Yii::$app->mailer->compose()

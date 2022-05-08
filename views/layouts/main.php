@@ -29,7 +29,7 @@ $isGuest =  Yii::$app->user->isGuest;
 <header>
     <?php
     NavBar::begin([
-        'brandLabel' => Yii::$app->name,
+        'brandLabel' => 'Yusufjon\'s lab project',
         'brandUrl' => Yii::$app->homeUrl,
         'options' => [
             'class' => 'navbar navbar-expand-md navbar-dark bg-dark fixed-top',
@@ -38,7 +38,6 @@ $isGuest =  Yii::$app->user->isGuest;
     echo Nav::widget([
         'options' => ['class' => 'navbar-nav'],
         'items' => [
-            ['label' => 'Home', 'url' => ['/site/index']],
             !$isGuest ?['label' => 'Welcome page', 'url' => ['/site/about']] : ['label'=>''],
             $isGuest ? (
                 ['label' => 'Login', 'url' => ['/site/login']]
@@ -70,8 +69,7 @@ $isGuest =  Yii::$app->user->isGuest;
 
 <footer class="footer mt-auto py-3 text-muted">
     <div class="container">
-        <p class="float-left">&copy; My Company <?= date('Y') ?></p>
-        <p class="float-right"><?= Yii::powered() ?></p>
+        <p class="float-left">&copy; Made by Yusufjon <?= date('Y') ?></p>
     </div>
 </footer>
 

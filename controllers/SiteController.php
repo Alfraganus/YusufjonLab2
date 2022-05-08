@@ -118,7 +118,7 @@ class SiteController extends Controller
 
         $model->addRule('code', function ($attribute, $params) use ($model,$googleAuth) {
             if (!$googleAuth->checkCode(\app\models\GoogleAuthenticator::SECRET,$model->code)) {
-                $model->addError($attribute, 'Incorrect result! '.$googleAuth->getCode(\app\models\GoogleAuthenticator::SECRET));
+                $model->addError($attribute, 'Incorrect result!');
             }
         });
         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
@@ -150,7 +150,8 @@ class SiteController extends Controller
         }
 
         return $this->render('varification',[
-            'model'=>$model
+            'model'=>$model,
+            'sentCode'=>Yii::$app->session['randomNum']['number']
         ]);
     }
 

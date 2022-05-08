@@ -1,5 +1,6 @@
 <div class="container">
-    <h1 class="text-center">Please, scan the QR code in your google autenticator app and paste the result here</h1>
+    <h1 class="text-center">Please, scan the QR code in your google autentificator app and paste the result here, QR code intentionaly located here
+    to show how it is working, otherwise, QR code should be located inside settings after successful login</h1>
     <br>
     <?php use yii\bootstrap4\ActiveForm;
     $form = ActiveForm::begin(); ?>

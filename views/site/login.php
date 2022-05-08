@@ -14,10 +14,9 @@ $this->params['breadcrumbs'][] = $this->title;
 $model->authMethod = '0';
 ?>
 <div class="site-login">
-    <h1><?= Html::encode($this->title) ?></h1>
 
-  <h4>  You may login with <strong>admin/admin</strong> or <strong>demo/demo</strong>.<br></h4>
-
+  <h4 class="text-center">login: <strong>labproject <br>password : Ed2s@.eLBzf~Z!ug </h4>
+    <br>
     <?php $form = ActiveForm::begin([
         'id' => 'login-form',
         'layout' => 'horizontal',
@@ -30,9 +29,9 @@ $model->authMethod = '0';
     ]); ?>
 
     <?= $form->field($model, 'authMethod')->inline()->radioList([
-            LoginForm::EMAIL_AUTH=>'2 step email varification',
+            LoginForm::EMAIL_AUTH=>'Email varification',
         LoginForm::GOOGLE_AUTH =>'Google authentificator']
-    ) ?>
+    )->label('2-step varification type') ?>
     <?= $form->field($model, 'username')->textInput(['autofocus' => true]) ?>
 
         <?= $form->field($model, 'password')->passwordInput() ?>
